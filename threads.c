@@ -24,7 +24,6 @@ void Screen_init();
 void Screen_shutDown();
 void Send_init();
 void Send_shutDown();
-
 void * receiveThread(){
     struct sockaddr_in addr;
 
@@ -52,6 +51,9 @@ void * receiveThread(){
     close(socketDescriptor);
     return NULL;
 }
+int x = 5;
+int y = 6;
+int c = x + y;
 
 void Receive_init(){
     pthread_create(
