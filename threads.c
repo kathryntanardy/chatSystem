@@ -15,6 +15,11 @@
 static pthread_t keyboardThreadPID;
 static pthread_t ReceiverThreadPID;
 
+static pthread_cond_t s_receiveCondVar = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t s_receiveMutexVar = PTHREAD_MUTEX_INITIALIZER;
+
+static List * receiveList;
+
 static int socketDescriptor;
 
 void * keyboardThread();
@@ -40,20 +45,22 @@ void * receiveThread(){
         struct sockaddr_in sinRemote;
         unsigned int sin_len = sizeof(sinRemote);
         char messageRx[MSG_MAX_LENGTH];
-        int bytesRx = recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH,
+        recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH,
         0, (struct sockaddr *) &sinRemote, &sin_len);
+      
 
-        int terminateldx = (bytesRx < MSG_MAX_LENGTH) ? bytesRx : MSG_MAX_LENGTH - 1;
-        messageRx[terminateldx] = 0;
-        //NOT FINISHED YET
+        pthread_mutex_lock(&s_receiveMutexVar);
+        {
+
+            pthread_mutex_signal(&s_receiveCondVar);
+        }
+        pthread_mutex_unlock(&s_receiveMutexVar);
 
     }
     close(socketDescriptor);
     return NULL;
 }
-int x = 5;
-int y = 6;
-int c = x + y;
+
 
 void Receive_init(){
     pthread_create(
@@ -65,3 +72,7 @@ void Receive_init(){
 }
 void Receive_shutDown();
 
+void systemInit(){
+    receiveList = List_create();
+    
+}
