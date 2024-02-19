@@ -15,17 +15,44 @@
 static pthread_t keyboardThreadPID;
 static pthread_t ReceiverThreadPID;
 static pthread_t ScreenThreadPID;
+static pthread_t SendThreadPID;
 
 static pthread_cond_t s_receiveCondVar = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t s_receiveMutexVar = PTHREAD_MUTEX_INITIALIZER;
 
+static pthread_cond_t s_sendCondVar = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t s_sendMutexVar = PTHREAD_MUTEX_INITIALIZER;
+
 static List * receiveList;
+static List * sendList;
 
 static int socketDescriptor;
 
-static void * keyboardThread();
-static void Keyboard_init();
-static void Keyboard_shutDown();
+static void * keyboardThread(){
+    while (1){
+        pthread_mutex_lock(&s_sendMutexVar);
+        char* message = malloc(MSG_MAX_LENGTH);
+        scanf("%s",&message);
+        List_prepend(sendList, message);
+        pthread_cond_signal(&s_sendCondVar);
+        pthread_mutex_unlock(&s_sendMutexVar);
+    }
+}
+
+static void Keyboard_init(){
+    pthread_create(
+        &keyboardThreadPID,
+        NULL,
+        keyboardThread,
+        NULL
+    );
+}
+
+static void Keyboard_shutDown(){
+    pthread_cancel(keyboardThreadPID);
+
+    pthread_join(keyboardThreadPID, NULL);
+}
 
 static void freeNode(void* pItem){
     pItem = NULL;
@@ -66,9 +93,35 @@ static void Screen_shutDown(){
     pthread_join(ScreenThreadPID, NULL);
 }
 
-static void Send_init();
+static void * sendThread(int socketDescriptor, struct sockaddr_in sinRemote){
+    unsigned int sin_len = sizeof(sinRemote);
+    while(1){
 
-static void Send_shutDown();
+        pthread_mutex_lock(&s_sendMutexVar);
+        if (List_count(sendList) == 0)
+            pthread_cond_wait(&s_sendCondVar,&s_sendMutexVar);
+        char * messageTx = List_remove(sendList);
+        sendto (socketDescriptor, messageTx, strlen(messageTx), 0, (struct sockaddr *) &sinRemote,sin_len);
+        free(messageTx);
+        pthread_mutex_unlock(&s_sendMutexVar);
+    }
+    
+}
+
+static void Send_init(){
+    pthread_create(
+        &SendThreadPID,
+        NULL,
+        sendThread,
+        NULL
+    );
+}
+
+static void Send_shutDown(){
+    pthread_cancel(SendThreadPID);
+
+    pthread_join(SendThreadPID, NULL);
+}
 
 static void * receiveThread(){
     struct sockaddr_in addr;
@@ -116,6 +169,7 @@ static void Receive_init(){
         NULL
     );
 }
+
 static void Receive_shutDown(){
     pthread_cancel(ReceiverThreadPID);
 
@@ -127,12 +181,13 @@ void systemInit(){
 
     Receive_init();
     Screen_init();
-    
+    Send_init();
 }
 
 void systemShutDown(){
     Screen_shutDown();
     Receive_shutDown();
+    Send_shutDown();
 
     List_free(receiveList, freeNode);
 }

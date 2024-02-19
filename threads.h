@@ -14,9 +14,6 @@ static void Screen_shutDown();
 static void * Screenthread();
 static void Send_init();
 static void Send_shutDown();
-static void Receive_init();
-static void Receive_shutDown();
-static void * receiveThread();
 void systemInit();
 void systemShutDown();
 
