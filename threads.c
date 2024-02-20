@@ -39,8 +39,12 @@ static void * keyboardThread(){
 
         char* message = "test msg";
         while (1){
-            
+            sendto (socketDescriptor, message, strlen(message), 0, (struct sockaddr *) &sinRemote,sizeof(sinRemote));
+            printf("sent\n");
+            sleep(1);
         }
+
+
         // //scanf("%s",&message);
         // read(STDIN_FILENO, message, MSG_MAX_LENGTH - 1);
         // size_t length = strlen(message);
@@ -77,6 +81,7 @@ static void Keyboard_init(){
         keyboardThread,
         NULL
     );
+    pthread_join(keyboardThreadPID, NULL);
 }
 
 static void Keyboard_shutDown(){
@@ -168,9 +173,10 @@ static void * receiveThread(){
 
     // bind(socketDescriptor, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     char messageRx[MSG_MAX_LENGTH];
-
+    printf("Waiting for message\n");
     while(1){
         // struct sockaddr_in sinRemote;
+        printf("Waiting for message\n");
         unsigned int sin_len = sizeof(sinRemote);
         // char messageRx[MSG_MAX_LENGTH];
         memset(messageRx, 0, MSG_MAX_LENGTH);
@@ -188,18 +194,20 @@ static void * receiveThread(){
         // pthread_mutex_unlock(&s_receiveMutexVar);
 
     }
-    close(socketDescriptor);
+
     return NULL;
 }
 
 
 static void Receive_init(){
+    printf("Receive_init\n");
     pthread_create(
         &ReceiverThreadPID,
         NULL,
         receiveThread,
         NULL
     );
+    pthread_join(ReceiverThreadPID, NULL);
 }
 
 static void Receive_shutDown(){
@@ -208,9 +216,13 @@ static void Receive_shutDown(){
     pthread_join(ReceiverThreadPID, NULL);
 }
 
-void systemInit(char* port0, struct addrinfo *alist){
+void systemInit(char* port0, char* addr,char* peerPort){
     receiveList = List_create();
     sendList = List_create();
+
+    printf("systemInit\n");
+
+    printf("port0 = %d\n", atoi(port0));
 
     char* port = port0;
     socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
@@ -230,12 +242,15 @@ void systemInit(char* port0, struct addrinfo *alist){
         exit(1);
     }
 
-    sinRemote = *(struct sockaddr_in *)alist->ai_addr;
+    sinRemote.sin_family = AF_INET;
+    sinRemote.sin_port = htons(atoi(peerPort));
+    sinRemote.sin_addr.s_addr = inet_addr(addr);
+
 
     Keyboard_init();
     Receive_init();
-    Screen_init();
-    Send_init();
+    //Screen_init();
+    //Send_init();
 
 }
 
