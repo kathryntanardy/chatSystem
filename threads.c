@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#define PORT 6000
+
 #define MSG_MAX_LENGTH 512
 
 static pthread_t keyboardThreadPID;
@@ -31,34 +31,38 @@ static List * sendList;
 
 static int socketDescriptor;
 static struct sockaddr_in sinRemote;
+static struct sockaddr_in local;
 
 static void * keyboardThread(){
     while (1){
         
 
-        char* message;
-        //scanf("%s",&message);
-        read(STDIN_FILENO, message, MSG_MAX_LENGTH - 1);
-        size_t length = strlen(message);
-
-        if(length > 0 && message[length - 1] == '\n'){
-            message[length - 1] = '\0';
+        char* message = "test msg";
+        while (1){
+            
         }
+        // //scanf("%s",&message);
+        // read(STDIN_FILENO, message, MSG_MAX_LENGTH - 1);
+        // size_t length = strlen(message);
 
-        if(message[0] == '!' && length == 1){
-            Udp_shutdown();
-            exit(0);
-        }
+        // if(length > 0 && message[length - 1] == '\n'){
+        //     message[length - 1] = '\0';
+        // }
 
-        pthread_mutex_lock(&s_sendMutexVar);
-        {
-            char * copiedMessage = malloc(length);
-            strncpy(copiedMessage, message, length);
-            copiedMessage[length - 1] = '\0';
-            List_append(sendList, copiedMessage);
-            pthread_cond_signal(&s_sendCondVar);
-        }
-        pthread_mutex_unlock(&s_sendMutexVar);
+        // // if(message[0] == '!' && length == 1){
+        // //     Udp_shutdown();
+        // //     exit(0);
+        // // }
+
+        // pthread_mutex_lock(&s_sendMutexVar);
+        // {
+        //     char * copiedMessage = malloc(length);
+        //     strncpy(copiedMessage, message, length);
+        //     copiedMessage[length - 1] = '\0';
+        //     List_append(sendList, copiedMessage);
+        //     pthread_cond_signal(&s_sendCondVar);
+        // }
+        // pthread_mutex_unlock(&s_sendMutexVar);
         
     
     }
@@ -169,21 +173,19 @@ static void * receiveThread(){
         // struct sockaddr_in sinRemote;
         unsigned int sin_len = sizeof(sinRemote);
         // char messageRx[MSG_MAX_LENGTH];
-        int bytesRx = recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH,
-        0, (struct sockaddr *) &sinRemote, &sin_len);
-        int terminateldx = (bytesRx < MSG_MAX_LENGTH? bytesRx : MSG_MAX_LENGTH - 1);
-        messageRx[terminateldx] = 0;
-        int incMe = atoi(messageRx);
+        memset(messageRx, 0, MSG_MAX_LENGTH);
+        int bytesRx = recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH, 0, (struct sockaddr *) &sinRemote, &sin_len);
+        printf ("Received: %s\n", messageRx);
 
-        pthread_mutex_lock(&s_receiveMutexVar);
-        {
-            char * message = malloc(MSG_MAX_LENGTH);
-            strncpy(message, messageRx, terminateldx);
-            message[terminateldx] = 0;
-            List_append(receiveList, message);
-            pthread_cond_signal(&s_receiveCondVar);
-        }
-        pthread_mutex_unlock(&s_receiveMutexVar);
+        // pthread_mutex_lock(&s_receiveMutexVar);
+        // {
+        //     char * message = malloc(MSG_MAX_LENGTH);
+        //     strncpy(message, messageRx, terminateldx);
+        //     message[terminateldx] = 0;
+        //     List_append(receiveList, message);
+        //     pthread_cond_signal(&s_receiveCondVar);
+        // }
+        // pthread_mutex_unlock(&s_receiveMutexVar);
 
     }
     close(socketDescriptor);
@@ -206,14 +208,35 @@ static void Receive_shutDown(){
     pthread_join(ReceiverThreadPID, NULL);
 }
 
-void systemInit(){
+void systemInit(char* port0, struct addrinfo *alist){
     receiveList = List_create();
     sendList = List_create();
+
+    char* port = port0;
+    socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+    
+    local.sin_family = AF_INET;
+    local.sin_port = htons(atoi(port));
+    local.sin_addr.s_addr = INADDR_ANY;
+
+    // struct sockaddr_in *sinp;
+    // char *addr;
+    // char buf[INET_ADDRSTRLEN];
+    // sinp = (struct sockaddr_in *)aip->ai_addr;
+    // addr = inet_ntop(AF_INET, &local.sin_addr, buf, INET_ADDRSTRLEN);
+    // printf(" addr = %s, port = %d\n", addr?addr:"unknow ", ntohs(local.sin_port));
+    if (bind(socketDescriptor, (struct sockaddr *)&local, sizeof(struct sockaddr_in)) == -1){
+        perror("bind");
+        exit(1);
+    }
+
+    sinRemote = *(struct sockaddr_in *)alist->ai_addr;
 
     Keyboard_init();
     Receive_init();
     Screen_init();
     Send_init();
+
 }
 
 void systemShutDown(){
