@@ -13,8 +13,15 @@
 #define PORT 6000
 #define MSG_MAX_LENGTH 512
 
-int main (){
+int main(int argc, char * argv[]){
 
+    if(argc != 4){
+        printf("Input the correct argument!");
+        exit(0);
+    }
+
+    systemInit(argv[1], argv[2], argv[3]);
+    
     // struct sockaddr_in addr;
     // addr.sin_family = AF_INET;
     // addr.sin_port = htons(PORT);
@@ -24,7 +31,7 @@ int main (){
     // int socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
 
     // bind(socketDescriptor, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-    
+
     return 0;
 
     

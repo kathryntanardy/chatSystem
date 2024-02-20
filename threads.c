@@ -9,9 +9,9 @@
 #include "threads.h"
 #include <netinet/in.h>
 
-#define PORT 6000
 #define MSG_MAX_LENGTH 512
 
+static char * portNumber;
 static pthread_t keyboardThreadPID;
 static pthread_t ReceiverThreadPID;
 static pthread_t ScreenThreadPID;
@@ -148,11 +148,12 @@ static void Send_shutDown(){
     pthread_join(SendThreadPID, NULL);
 }
 
-static void * receiveThread(){
+static void * receiveThread(char * myPort){
     struct sockaddr_in addr;
 
+    char *port = myPort;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(PORT);
+    addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
     memset(&addr, 0, sizeof(addr));
     
@@ -186,12 +187,12 @@ static void * receiveThread(){
 }
 
 
-static void Receive_init(){
+static void Receive_init(char *myPort){
     pthread_create(
         &ReceiverThreadPID,
         NULL,
         receiveThread,
-        NULL
+        myPort
     );
 }
 
@@ -201,11 +202,11 @@ static void Receive_shutDown(){
     pthread_join(ReceiverThreadPID, NULL);
 }
 
-void systemInit(){
+void systemInit(char * myPort, char * remoteMachine, char * remotePort){
     receiveList = List_create();
     sendList = List_create();
 
-    Receive_init();
+    Receive_init(myPort);
     Screen_init();
     Send_init();
 }
