@@ -30,13 +30,36 @@ static int socketDescriptor;
 
 static void * keyboardThread(){
     while (1){
+        
+
+        char* message;
+        //scanf("%s",&message);
+        read(STDIN_FILENO, message, MSG_MAX_LENGTH - 1);
+        size_t length = strlen(message);
+
+        if(length > 0 && message[length - 1] == '\n'){
+            message[length - 1] = '\0';
+        }
+
+        if(message[0] == '!' && length == 1){
+            Udp_shutdown();
+            exit(0);
+        }
+
         pthread_mutex_lock(&s_sendMutexVar);
-        char* message = malloc(MSG_MAX_LENGTH);
-        scanf("%s",&message);
-        List_prepend(sendList, message);
-        pthread_cond_signal(&s_sendCondVar);
+        {
+            char * copiedMessage = malloc(length);
+            strncpy(copiedMessage, message, length);
+            copiedMessage[length - 1] = '\0';
+            List_append(sendList, copiedMessage);
+            pthread_cond_signal(&s_sendCondVar);
+        }
         pthread_mutex_unlock(&s_sendMutexVar);
+        
+    
     }
+
+    return NULL;
 }
 
 static void Keyboard_init(){
@@ -98,11 +121,13 @@ static void * sendThread(int socketDescriptor, struct sockaddr_in sinRemote){
     while(1){
 
         pthread_mutex_lock(&s_sendMutexVar);
-        if (List_count(sendList) == 0)
+        {
+            if (List_count(sendList) == 0)
             pthread_cond_wait(&s_sendCondVar,&s_sendMutexVar);
-        char * messageTx = List_remove(sendList);
-        sendto (socketDescriptor, messageTx, strlen(messageTx), 0, (struct sockaddr *) &sinRemote,sin_len);
-        free(messageTx);
+            char * messageTx = List_remove(sendList);
+            sendto (socketDescriptor, messageTx, strlen(messageTx), 0, (struct sockaddr *) &sinRemote,sin_len);
+            free(messageTx);
+        }
         pthread_mutex_unlock(&s_sendMutexVar);
     }
     
@@ -178,6 +203,7 @@ static void Receive_shutDown(){
 
 void systemInit(){
     receiveList = List_create();
+    sendList = List_create();
 
     Receive_init();
     Screen_init();
@@ -190,4 +216,5 @@ void systemShutDown(){
     Send_shutDown();
 
     List_free(receiveList, freeNode);
+    List_free(sendList, freeNode);
 }
