@@ -8,6 +8,9 @@
 #include "list.h"
 #include "threads.h"
 #include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #define PORT 6000
 #define MSG_MAX_LENGTH 512
@@ -27,6 +30,7 @@ static List * receiveList;
 static List * sendList;
 
 static int socketDescriptor;
+static struct sockaddr_in sinRemote;
 
 static void * keyboardThread(){
     while (1){
@@ -149,21 +153,22 @@ static void Send_shutDown(){
 }
 
 static void * receiveThread(){
-    struct sockaddr_in addr;
+    // struct sockaddr_in addr;
 
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(PORT);
-    addr.sin_addr.s_addr = INADDR_ANY;
-    memset(&addr, 0, sizeof(addr));
+    // addr.sin_family = AF_INET;
+    // addr.sin_port = htons(PORT);
+    // addr.sin_addr.s_addr = INADDR_ANY;
+    // memset(&addr, 0, sizeof(addr));
     
-    socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+    // socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
 
-    bind(socketDescriptor, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+    // bind(socketDescriptor, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+    char messageRx[MSG_MAX_LENGTH];
 
     while(1){
-        struct sockaddr_in sinRemote;
+        // struct sockaddr_in sinRemote;
         unsigned int sin_len = sizeof(sinRemote);
-        char messageRx[MSG_MAX_LENGTH];
+        // char messageRx[MSG_MAX_LENGTH];
         int bytesRx = recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH,
         0, (struct sockaddr *) &sinRemote, &sin_len);
         int terminateldx = (bytesRx < MSG_MAX_LENGTH? bytesRx : MSG_MAX_LENGTH - 1);
@@ -205,6 +210,7 @@ void systemInit(){
     receiveList = List_create();
     sendList = List_create();
 
+    Keyboard_init();
     Receive_init();
     Screen_init();
     Send_init();
@@ -214,6 +220,7 @@ void systemShutDown(){
     Screen_shutDown();
     Receive_shutDown();
     Send_shutDown();
+    Keyboard_shutDown();
 
     List_free(receiveList, freeNode);
     List_free(sendList, freeNode);
