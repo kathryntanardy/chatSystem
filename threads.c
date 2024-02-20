@@ -42,7 +42,7 @@ static void * keyboardThread(){
         }
 
         if(message[0] == '!' && length == 1){
-            Udp_shutdown();
+            systemShutDown();
             exit(0);
         }
 
