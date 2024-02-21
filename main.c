@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 
     struct addrinfo *ailist, *aip;
     struct addrinfo hint;
-    struct sockaddr_in *sinp;
+ 
     char *hostname = argv[2];
 
     // printf ("hostname = %s\n", hostname);
@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     // printf ("server = %s\n", server);
 
     const char *addr;
+  
     hint.ai_family = AF_INET; 
     hint.ai_socktype = 0; 
     hint.ai_flags = AI_PASSIVE; 
@@ -54,12 +55,18 @@ int main(int argc, char **argv)
     //     addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
     //     printf(" addr = %s, port = %d\n", addr?addr:"unknow ", ntohs(sinp->sin_port));
     // }
-    sinp = (struct sockaddr_in *)ailist->ai_addr;
+
+    struct sockaddr_in * sinp = (struct sockaddr_in *)ailist->ai_addr;
+    // addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
+
+    int peerport = ntohs(sinp->sin_port);
     addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
     printf(" addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
-    int peerport = ntohs(sinp->sin_port);
-    systemInit(argv[1],&addr, &peerport);
+    printf("%s\n", addr);
+    printf("%d\n", peerport);
+    systemInit(argv[1], sinp, argv[3]);
 
+    free(ailist);
     return 0;
 }
 
