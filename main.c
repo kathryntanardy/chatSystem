@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
     printf(" addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
     int peerport = ntohs(sinp->sin_port);
-    systemInit(&argv[1],&addr, &peerport);
+    systemInit(argv[1],&addr, &peerport);
 
     return 0;
 }
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 //     for (cur = res; cur != NULL; cur = cur->ai_next) {
 //         addr = (struct sockaddr_in *)cur->ai_addr;
 //         printf("ip: %s\n", inet_ntop(AF_INET, &addr->sin_addr, ipbuf, 16));
-//         printf("port: %d\n", inet_ntop(AF_INET, &addr->sin_port, (void *)&port, 2));
+//         printf("port: %d\n", ipeerportet_ntop(AF_INET, &addr->sin_port, (void *)&port, 2));
 //         printf("port: %d\n", ntohs(addr->sin_port));
 
 //     }
