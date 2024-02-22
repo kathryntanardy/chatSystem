@@ -11,7 +11,7 @@ static void Keyboard_shutDown();
 static void Screen_shutDown();
 static void * Screenthread();
 static void Send_shutDown();
-void systemInit(char * myPort, char * remoteMachine, char * remotePort);
+void systemInit(char * myPort, struct sockaddr_in * sinp, char * remotePort);
 void systemShutDown();
 
 #endif 
