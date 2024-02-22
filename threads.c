@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 
 
-#define MSG_MAX_LENGTH 11
+#define MSG_MAX_LENGTH 1000
 
 static pthread_t keyboardThreadPID;
 static pthread_t ReceiverThreadPID;
@@ -39,8 +39,12 @@ static void * keyboardThread(){
 
         char message[MSG_MAX_LENGTH];
         fgets(message, MSG_MAX_LENGTH, stdin);
+        
         if (strlen(message) > MSG_MAX_LENGTH - 1){
             printf("message too long\n");
+        }
+        else if (strlen(message) == 1){
+            printf("Can not send empty message\n");
         }
         else {
             size_t length = strlen(message);
@@ -93,6 +97,7 @@ static void * Screenthread(){
             printf("%s\n", messagePointer);
             printf("\nEnter message: \n");
             free(messagePointer);
+            memset(messagePointer, 0, MSG_MAX_LENGTH);
         }
         pthread_mutex_unlock(&s_receiveMutexVar);
     }
@@ -144,6 +149,7 @@ static void * receiveThread(){
 
     // bind(socketDescriptor, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     char messageRx[MSG_MAX_LENGTH];
+    char* message;
     while(1){
         struct sockaddr_in l_sinRemote;
         unsigned int sin_len = sizeof(sinRemote);
