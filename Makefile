@@ -1,4 +1,5 @@
-CFLAGS = -Wall -g -std=c99 -D _POSIX_C_SOURCE=200112L
+
+CFLAGS = -Wall -g -std=c99 -D _POSIX_C_SOURCE=200112L -Werror
 
 all: build
 
@@ -7,6 +8,7 @@ build:
 
 main: main.c list.o threads.c
 	gcc -Wall main.c threads.c list.o -o main -lpthread
+main.c threads.c list.o -o main -lpthread
 
 valgrind: build
 	valgrind --leak-check=full ./main

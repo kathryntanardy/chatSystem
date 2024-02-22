@@ -27,9 +27,11 @@ int main(int argc, char **argv)
     char *hostname = argv[2];
 
     // printf ("hostname = %s\n", hostname);
+
     
     char buf[INET_ADDRSTRLEN];
     char *server = argv[3]; 
+
 
     // printf ("server = %s\n", server);
 
@@ -67,6 +69,7 @@ int main(int argc, char **argv)
     systemInit(argv[1], sinp, argv[3]);
 
     free(ailist);
+
     return 0;
 }
 

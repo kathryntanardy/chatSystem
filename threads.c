@@ -13,8 +13,11 @@
 #include <arpa/inet.h>
 
 
+
 #define MSG_MAX_LENGTH 1000
 
+
+static char * portNumber;
 static pthread_t keyboardThreadPID;
 static pthread_t ReceiverThreadPID;
 static pthread_t ScreenThreadPID;
@@ -43,8 +46,10 @@ static void * keyboardThread(){
         if (strlen(message) > MSG_MAX_LENGTH - 1){
             printf("Message too long\n");
         }
+
         else if (strlen(message) == 1){
             printf("Can not send empty message\n");
+
         }
         else {
             size_t length = strlen(message);
@@ -130,13 +135,7 @@ static void Send_shutDown(){
     pthread_cancel(SendThreadPID);
 }
 
-static void * receiveThread(){
-    // struct sockaddr_in addr;
 
-    // addr.sin_family = AF_INET;
-    // addr.sin_port = htons(PORT);
-    // addr.sin_addr.s_addr = INADDR_ANY;
-    // memset(&addr, 0, sizeof(addr));
     
     // socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -164,9 +163,6 @@ static void * receiveThread(){
 }
 
 
-static void Receive_shutDown(){
-    pthread_cancel(ReceiverThreadPID);
-}
 
 void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
     receiveList = List_create();
@@ -218,11 +214,12 @@ void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
         sendThread,
         NULL
     );
+
     pthread_create(
         &ReceiverThreadPID,
         NULL,
         receiveThread,
-        NULL
+        myPort
     );
  
     pthread_join(ReceiverThreadPID, NULL);
