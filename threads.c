@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 
 
-#define MSG_MAX_LENGTH 10
+#define MSG_MAX_LENGTH 11
 
 static pthread_t keyboardThreadPID;
 static pthread_t ReceiverThreadPID;
@@ -39,24 +39,29 @@ static void * keyboardThread(){
 
         char message[MSG_MAX_LENGTH];
         fgets(message, MSG_MAX_LENGTH, stdin);
-        size_t length = strlen(message);
-        message[length-1] = '\0';
-
-        if(message[0] == '!' && message[1] == '\0'){
-            printf("system shut down\n");
-            systemShutDown();
+        if (strlen(message) > MSG_MAX_LENGTH - 1){
+            printf("message too long\n");
         }
-       
+        else {
+            size_t length = strlen(message);
+            message[length-1] = '\0';
 
-        pthread_mutex_lock(&s_sendMutexVar);
-        {
-            char * copiedMessage = malloc(length);
-            strncpy(copiedMessage, message, length);
-            copiedMessage[length - 1] = '\0';
-            List_append(sendList, copiedMessage);
-            pthread_cond_signal(&s_sendCondVar);
+            if(message[0] == '!' && message[1] == '\0'){
+                printf("system shut down\n");
+                systemShutDown();
+            }
+        
+
+            pthread_mutex_lock(&s_sendMutexVar);
+            {
+                char * copiedMessage = malloc(length);
+                strncpy(copiedMessage, message, length);
+                copiedMessage[length - 1] = '\0';
+                List_append(sendList, copiedMessage);
+                pthread_cond_signal(&s_sendCondVar);
+            }
+            pthread_mutex_unlock(&s_sendMutexVar);
         }
-        pthread_mutex_unlock(&s_sendMutexVar);
         
     
     }
