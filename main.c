@@ -21,7 +21,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    struct addrinfo *ailist, *aip;
+    struct addrinfo *ailist;
     struct addrinfo hint;
  
     char *hostname = argv[2];
@@ -61,9 +61,9 @@ int main(int argc, char **argv)
 
     int peerport = ntohs(sinp->sin_port);
     addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
-    printf(" addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
-    printf("%s\n", addr);
-    printf("%d\n", peerport);
+    printf("addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
+    // printf("%s\n", addr);
+    // printf("%d\n", peerport);
     systemInit(argv[1], sinp, argv[3]);
 
     free(ailist);

@@ -33,6 +33,7 @@ static int socketDescriptor;
 static struct sockaddr_in sinRemote;
 static struct sockaddr_in local;
 
+
 static void * keyboardThread(){
     while (1){
 
@@ -42,9 +43,8 @@ static void * keyboardThread(){
         message[length-1] = '\0';
 
         if(message[0] == '!' && message[1] == '\0'){
-            printf("hello\n");
+            printf("system shut down\n");
             systemShutDown();
-            exit(0);
         }
        
 
@@ -67,26 +67,26 @@ static void * keyboardThread(){
 static void Keyboard_shutDown(){
     pthread_cancel(keyboardThreadPID);
 
-    pthread_join(keyboardThreadPID, NULL);
+    //pthread_join(keyboardThreadPID, NULL);
 }
 
 static void freeNode(void* pItem){
-    pItem = NULL;
+    free(pItem);
 }
 
 static void * Screenthread(){
     printf("Enter message: \n");
-    char * messagePointer; 
+    char * messagePointer;
 
     while(1){
 
         pthread_mutex_lock(&s_receiveMutexVar);
         {
             pthread_cond_wait(&s_receiveCondVar, &s_receiveMutexVar);
-            List_first(receiveList);
-            messagePointer = List_remove(receiveList);
+            //List_first(receiveList);
+            messagePointer = List_trim(receiveList);
             printf("%s\n", messagePointer);
-            printf("Enter message: \n");
+            printf("\nEnter message: \n");
             free(messagePointer);
         }
         pthread_mutex_unlock(&s_receiveMutexVar);
@@ -99,7 +99,7 @@ static void * Screenthread(){
 static void Screen_shutDown(){
     pthread_cancel(ScreenThreadPID);
 
-    pthread_join(ScreenThreadPID, NULL);
+    //pthread_join(ScreenThreadPID, NULL);
 }
 
 static void * sendThread(){
@@ -109,8 +109,8 @@ static void * sendThread(){
         pthread_mutex_lock(&s_sendMutexVar);
         {
             pthread_cond_wait(&s_sendCondVar,&s_sendMutexVar);
-            List_first(sendList);
-            char * messageTx = List_remove(sendList);
+            // List_first(sendList);
+            char * messageTx = List_trim(sendList);
             printf("sent\n");
             sendto (socketDescriptor, messageTx, strlen(messageTx), 0, (struct sockaddr *) &sinRemote, sin_len);
             free(messageTx);
@@ -124,7 +124,7 @@ static void * sendThread(){
 static void Send_shutDown(){
     pthread_cancel(SendThreadPID);
 
-    pthread_join(SendThreadPID, NULL);
+    //pthread_join(SendThreadPID, NULL);
 }
 
 static void * receiveThread(){
@@ -141,14 +141,16 @@ static void * receiveThread(){
     char messageRx[MSG_MAX_LENGTH];
     while(1){
         struct sockaddr_in l_sinRemote;
-        printf("Waiting for message\n");
         unsigned int sin_len = sizeof(sinRemote);
         memset(messageRx, 0, MSG_MAX_LENGTH);
         int bytesRx = recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH, 0, (struct sockaddr *) &l_sinRemote, &sin_len);
         if(bytesRx > 0){
-            printf("got it");
+            printf("receive meassage: ");
         }
-        printf ("Received: %s\n", messageRx);
+        char* message = malloc(MSG_MAX_LENGTH);
+        strncpy(message, messageRx, bytesRx);
+        List_append(receiveList, message);
+        pthread_cond_signal(&s_receiveCondVar);
 
         // pthread_mutex_lock(&s_receiveMutexVar);
         // {
@@ -169,17 +171,16 @@ static void * receiveThread(){
 static void Receive_shutDown(){
     pthread_cancel(ReceiverThreadPID);
 
-    pthread_join(ReceiverThreadPID, NULL);
+    //pthread_join(ReceiverThreadPID, NULL);
 }
 
 void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
     receiveList = List_create();
     sendList = List_create();
 
-    printf("systemInit\n");
 
-    printf("port0 = %d\n", atoi(port0));
-    printf("port1 = %d\n", atoi(peerPort));
+    printf("My port = %d\n", atoi(port0));
+    printf("Peer port = %d\n", atoi(peerPort));
 
     char* port = port0;
     socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
@@ -202,7 +203,7 @@ void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
     sinRemote.sin_family = AF_INET;
     sinRemote.sin_port = htons(atoi(peerPort));
     sinRemote.sin_addr.s_addr = sinp->sin_addr.s_addr;
-    printf("inside: %s\n",  inet_ntoa(sinRemote.sin_addr));
+    // printf("inside: %s\n",  inet_ntoa(sinRemote.sin_addr));
 
 
     pthread_create(
@@ -230,20 +231,22 @@ void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
         NULL
     );
  
-    // pthread_join(ReceiverThreadPID, NULL);
+    pthread_join(ReceiverThreadPID, NULL);
     pthread_join(keyboardThreadPID, NULL);
-    // pthread_join(ScreenThreadPID, NULL);
+    pthread_join(ScreenThreadPID, NULL);
     pthread_join(SendThreadPID, NULL);
- 
+    exit(1);
 
 }
 
 void systemShutDown(){
-    // Screen_shutDown();
-    // Receive_shutDown();
+
+    close(socketDescriptor);
+    List_free(receiveList, freeNode);
+    List_free(sendList, freeNode);
+    Screen_shutDown();
+    Receive_shutDown();
     Send_shutDown();
     Keyboard_shutDown();
-
-    // List_free(receiveList, freeNode);
-    // List_free(sendList, freeNode);
+    exit(1);
 }
