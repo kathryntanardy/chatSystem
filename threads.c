@@ -36,12 +36,12 @@ static struct sockaddr_in local;
 
 static void * keyboardThread(){
     while (1){
-
+      
         char message[MSG_MAX_LENGTH];
         fgets(message, MSG_MAX_LENGTH, stdin);
         
         if (strlen(message) > MSG_MAX_LENGTH - 1){
-            printf("message too long\n");
+            printf("Message too long\n");
         }
         else if (strlen(message) == 1){
             printf("Can not send empty message\n");
@@ -51,8 +51,9 @@ static void * keyboardThread(){
             message[length-1] = '\0';
 
             if(message[0] == '!' && message[1] == '\0'){
-                printf("system shut down\n");
+                printf("Shutting down system..\n");
                 systemShutDown();
+                exit(0);
             }
         
 
@@ -62,6 +63,7 @@ static void * keyboardThread(){
                 strncpy(copiedMessage, message, length);
                 copiedMessage[length - 1] = '\0';
                 List_append(sendList, copiedMessage);
+                printf("\nEnter message: ");
                 pthread_cond_signal(&s_sendCondVar);
             }
             pthread_mutex_unlock(&s_sendMutexVar);
@@ -75,8 +77,6 @@ static void * keyboardThread(){
 
 static void Keyboard_shutDown(){
     pthread_cancel(keyboardThreadPID);
-
-    //pthread_join(keyboardThreadPID, NULL);
 }
 
 static void freeNode(void* pItem){
@@ -84,7 +84,6 @@ static void freeNode(void* pItem){
 }
 
 static void * Screenthread(){
-    printf("Enter message: \n");
     char * messagePointer;
 
     while(1){
@@ -94,8 +93,7 @@ static void * Screenthread(){
             pthread_cond_wait(&s_receiveCondVar, &s_receiveMutexVar);
             //List_first(receiveList);
             messagePointer = List_trim(receiveList);
-            printf("%s\n", messagePointer);
-            printf("\nEnter message: \n");
+            printf("\nReceived message: %s\n", messagePointer);
             free(messagePointer);
             memset(messagePointer, 0, MSG_MAX_LENGTH);
         }
@@ -108,8 +106,6 @@ static void * Screenthread(){
 
 static void Screen_shutDown(){
     pthread_cancel(ScreenThreadPID);
-
-    //pthread_join(ScreenThreadPID, NULL);
 }
 
 static void * sendThread(){
@@ -121,7 +117,6 @@ static void * sendThread(){
             pthread_cond_wait(&s_sendCondVar,&s_sendMutexVar);
             // List_first(sendList);
             char * messageTx = List_trim(sendList);
-            printf("sent\n");
             sendto (socketDescriptor, messageTx, strlen(messageTx), 0, (struct sockaddr *) &sinRemote, sin_len);
             free(messageTx);
         }
@@ -133,8 +128,6 @@ static void * sendThread(){
 
 static void Send_shutDown(){
     pthread_cancel(SendThreadPID);
-
-    //pthread_join(SendThreadPID, NULL);
 }
 
 static void * receiveThread(){
@@ -155,23 +148,15 @@ static void * receiveThread(){
         unsigned int sin_len = sizeof(sinRemote);
         memset(messageRx, 0, MSG_MAX_LENGTH);
         int bytesRx = recvfrom(socketDescriptor, messageRx, MSG_MAX_LENGTH, 0, (struct sockaddr *) &l_sinRemote, &sin_len);
-        if(bytesRx > 0){
-            printf("receive meassage: ");
+  
+        pthread_mutex_lock(&s_receiveMutexVar);
+        {
+            char * message = malloc(MSG_MAX_LENGTH);
+            strncpy(message, messageRx, bytesRx);
+            List_append(receiveList, message);
+            pthread_cond_signal(&s_receiveCondVar);
         }
-        char* message = malloc(MSG_MAX_LENGTH);
-        strncpy(message, messageRx, bytesRx);
-        List_append(receiveList, message);
-        pthread_cond_signal(&s_receiveCondVar);
-
-        // pthread_mutex_lock(&s_receiveMutexVar);
-        // {
-        //     char * message = malloc(MSG_MAX_LENGTH);
-        //     strncpy(message, messageRx, terminateldx);
-        //     message[terminateldx] = 0;
-        //     List_append(receiveList, message);
-        //     pthread_cond_signal(&s_receiveCondVar);
-        // }
-        // pthread_mutex_unlock(&s_receiveMutexVar);
+        pthread_mutex_unlock(&s_receiveMutexVar);
 
     }
 
@@ -181,8 +166,6 @@ static void * receiveThread(){
 
 static void Receive_shutDown(){
     pthread_cancel(ReceiverThreadPID);
-
-    //pthread_join(ReceiverThreadPID, NULL);
 }
 
 void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
@@ -216,7 +199,7 @@ void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort){
     sinRemote.sin_addr.s_addr = sinp->sin_addr.s_addr;
     // printf("inside: %s\n",  inet_ntoa(sinRemote.sin_addr));
 
-
+    printf("\nEnter message: ");
     pthread_create(
         &keyboardThreadPID,
         NULL,
