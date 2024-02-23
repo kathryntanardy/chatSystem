@@ -1,4 +1,4 @@
-CFLAGS = -Wall -g -std=c99 -D _POSIX_C_SOURCE=200112L
+CFLAGS = -Wall -Werror -g -std=c99 -D _POSIX_C_SOURCE=200112L
 
 all: build
 

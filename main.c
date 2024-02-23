@@ -29,13 +29,13 @@ int main(int argc, char **argv)
     // printf ("hostname = %s\n", hostname);
 
     
-    char buf[INET_ADDRSTRLEN];
+    //char buf[INET_ADDRSTRLEN];
     char *server = argv[3]; 
 
 
     // printf ("server = %s\n", server);
 
-    const char *addr;
+    //const char *addr;
   
     hint.ai_family = AF_INET; 
     hint.ai_socktype = 0; 
@@ -61,13 +61,15 @@ int main(int argc, char **argv)
     struct sockaddr_in * sinp = (struct sockaddr_in *)ailist->ai_addr;
     // addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
     
-    addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
+    //addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
     // printf("addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
     // printf("%s\n", addr);
     // printf("%d\n", peerport);
     systemInit(argv[1], sinp, argv[3], hostname);
 
-    free(ailist);
+    // free(ailist);
+    freeaddrinfo(ailist);
+    printf("Exiting main\n");
 
     return 0;
 }

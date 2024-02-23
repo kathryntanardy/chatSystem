@@ -35,11 +35,11 @@ static struct sockaddr_in local;
 static char * hostname_peer; 
 
 
-static void freeNode(void* pItem){
+void freeNode(void* pItem){
     free(pItem);
 }
 
-static void *keyboardThread(){
+void *keyboardThread(){
     while (1){
       
         char message[MSG_MAX_LENGTH];
@@ -56,7 +56,7 @@ static void *keyboardThread(){
             message[length-1] = '\0';
 
             if(message[0] == '!' && message[1] == '\0'){
-                printf("Shutting down system..\n");
+                // printf("Shutting down system..\n");
                 systemShutDown();
                 exit(0);
             }
@@ -80,15 +80,15 @@ static void *keyboardThread(){
     return NULL;
 }
 
-static void Keyboard_shutDown(){
+void Keyboard_shutDown(){
     pthread_cancel(keyboardThreadPID);
 }
 
-static void Screen_shutDown(){
+void Screen_shutDown(){
     pthread_cancel(ScreenThreadPID);
 }
 
-static void *screenThread(){
+void *screenThread(){
     char * messagePointer;
 
     while(1){
@@ -111,7 +111,7 @@ static void *screenThread(){
 
 
 
-static void *sendThread(){
+void *sendThread(){
     unsigned int sin_len = sizeof(sinRemote);
 
     while(1){
@@ -129,11 +129,11 @@ static void *sendThread(){
 }
 
 
-static void Send_shutDown(){
+void Send_shutDown(){
     pthread_cancel(SendThreadPID);
 }
 
-static void * receiveThread(){
+void * receiveThread(){
     // struct sockaddr_in addr;
 
     // addr.sin_family = AF_INET;
@@ -166,7 +166,7 @@ static void * receiveThread(){
 }
 
 
-static void Receive_shutDown(){
+void Receive_shutDown(){
     pthread_cancel(ReceiverThreadPID);
 }
 
@@ -233,7 +233,7 @@ void systemInit(char* port0, struct sockaddr_in * sinp,char* peerPort, char* hos
     pthread_join(keyboardThreadPID, NULL);
     pthread_join(ScreenThreadPID, NULL);
     pthread_join(SendThreadPID, NULL);
-    exit(1);
+    return;
 
 }
 
@@ -243,8 +243,13 @@ void systemShutDown(){
     List_free(receiveList, freeNode);
     List_free(sendList, freeNode);
     Screen_shutDown();
+    //printf("Shutting down Screen..\n");
     Receive_shutDown();
+    //printf("Shutting down Receiver..\n");
     Send_shutDown();
+    //printf("Shutting down Send..\n");
     Keyboard_shutDown();
-    exit(1);
+    //printf("Shutting down Keyboard..\n");
+    printf("Shutting down system..\n");
+    return;
 }
