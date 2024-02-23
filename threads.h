@@ -5,13 +5,14 @@
 #include <pthread.h>
 #include <string.h>
 
-static void freeNode();
-static void* keyboardThread();
+static void freeNode(void *pItem);
+static void *keyboardThread();
 static void Keyboard_shutDown();
 static void Screen_shutDown();
-static void * Screenthread();
+static void *screenThread();
 static void Send_shutDown();
-void systemInit(char * myPort, struct sockaddr_in * sinp, char * remotePort);
+static void *sendThread();
+void systemInit(char * myPort, struct sockaddr_in * sinp, char * remotePort, char* hostname);
 void systemShutDown();
 
 #endif 

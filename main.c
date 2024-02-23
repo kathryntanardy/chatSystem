@@ -60,13 +60,12 @@ int main(int argc, char **argv)
 
     struct sockaddr_in * sinp = (struct sockaddr_in *)ailist->ai_addr;
     // addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
-
-    int peerport = ntohs(sinp->sin_port);
+    
     addr = inet_ntop(AF_INET, &sinp->sin_addr, buf, INET_ADDRSTRLEN);
-    printf("addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
+    // printf("addr = %s, port = %d\n", addr?addr:"unknow " ,  ntohs(sinp->sin_port));
     // printf("%s\n", addr);
     // printf("%d\n", peerport);
-    systemInit(argv[1], sinp, argv[3]);
+    systemInit(argv[1], sinp, argv[3], hostname);
 
     free(ailist);
 
